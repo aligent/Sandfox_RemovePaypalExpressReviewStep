@@ -2,12 +2,16 @@
   "name":"tim-bezhashvyly/removepaypalexpressreviewstep",
   "type":"magento-module",
   "license":"OSL-3.0",
-  "homepage":"https://github.com/magento-hackathon/Sandfox_RemovePaypalExpressReviewStep",
-  "description":"Removes the Paypal Express Review Step from Checkout",
+  "homepage":"https://github.com/aligent/Sandfox_RemovePaypalExpressReviewStep",
+  "description":"Removes the Paypal Express Review Step from Checkout, Cart Checkout & PDP Checkout",
   "authors":[
     {
       "name":"Tim Bezhashvyly",
       "email":"tim.bezhashvyly@gmail.com"
+    },
+    {
+      "name":"Kevin Chaplin",
+      "email":"kevin@aligent.com"
     }
   ],
   "require":{

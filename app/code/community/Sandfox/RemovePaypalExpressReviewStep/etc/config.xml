@@ -14,6 +14,9 @@
                 <rewrite>
                     <config>Sandfox_RemovePaypalExpressReviewStep_Model_Config</config>
                 </rewrite>
+                <rewrite>
+                    <express_checkout>Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout</express_checkout>
+                </rewrite>
             </paypal>
         </models>
         <events>
