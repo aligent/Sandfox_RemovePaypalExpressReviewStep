@@ -10,6 +10,7 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
 	 */
 	public function returnFromPaypal($token)
 	{
+		parent::returnFromPaypal($token);
 		$quote = $this->_quote;
 		if (!$quote->getIsVirtual()) {
 			$shippingAddress = $quote->getShippingAddress();
