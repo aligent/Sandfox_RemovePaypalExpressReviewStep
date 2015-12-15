@@ -11,7 +11,6 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Observer
 
 	public function controllerActionPredispatchPaypalExpressReview(Varien_Event_Observer $observer)
 	{
-
 		$quote = Mage::getModel('checkout/cart')->getQuote();
 		$shippingAddress = $quote->getShippingAddress();
 		$payment = $quote->getPayment();
@@ -22,7 +21,6 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Observer
 			Mage::getSingleton('core/session')->setCheckoutNotificationMessage('Please proceed through full checkout for international orders');
 			Mage::app()->getResponse()->setRedirect(Mage::getUrl('checkout/onepage'));
 		}
-
 	}
 
 	public function controllerActionPredispatchPaypalExpressPlaceOrder(Varien_Event_Observer $observer)
