@@ -6,6 +6,13 @@
         </Sandfox_RemovePaypalExpressReviewStep>
     </modules>
     <global>
+        <blocks>
+            <paypal>
+                <rewrite>
+                    <express_shortcut>Sandfox_RemovePaypalExpressReviewStep_Block_Express_Shortcut</express_shortcut>
+                </rewrite>
+            </paypal>
+        </blocks>
         <models>
             <sandfox_removepaypalexpressreviewstep>
                 <class>Sandfox_RemovePaypalExpressReviewStep_Model</class>

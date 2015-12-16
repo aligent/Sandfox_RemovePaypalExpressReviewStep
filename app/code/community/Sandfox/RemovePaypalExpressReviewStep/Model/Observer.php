@@ -15,11 +15,11 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Observer
 		$shippingAddress = $quote->getShippingAddress();
 		$payment = $quote->getPayment();
 
-		if ($shippingAddress->getCountryId() === 'AU' || $payment->getAdditionalInformation('paypal_express_checkout_shipping_overriden')) {
-			Mage::app()->getResponse()->setRedirect(Mage::getUrl('*/*/placeOrder'));
-		} else {
+		if ($shippingAddress->getCountryId() !== 'AU' && !$payment->getAdditionalInformation('paypal_express_checkout_shipping_overriden')) {
 			Mage::getSingleton('core/session')->setCheckoutNotificationMessage('Please proceed through full checkout for international orders');
 			Mage::app()->getResponse()->setRedirect(Mage::getUrl('checkout/onepage'));
+		} else {
+			Mage::app()->getResponse()->setRedirect(Mage::getUrl('*/*/placeOrder'));
 		}
 	}
 
