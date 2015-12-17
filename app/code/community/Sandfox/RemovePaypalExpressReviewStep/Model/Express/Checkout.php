@@ -14,7 +14,6 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
         $this->_api->setToken($token)
             ->callGetExpressCheckoutDetails();
         $quote = $this->_quote;
-
         $this->_quote->getShippingAddress()->setShouldIgnoreValidation(true);
 
         // import billing address
@@ -43,6 +42,8 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
                 // import shipping method
                 $code = '';
                 if ($this->_api->getShippingRateCode()) {
+
+                    // We collect totals inc. the imported shipping method/rate now so we can validate and set it below.
                     $quote->collectTotals();
                     if ($code = $this->_matchShippingMethodCode($shippingAddress, $this->_api->getShippingRateCode())) {
                         // possible bug of double collecting rates :-/
@@ -73,66 +74,12 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
         Mage_Sales_Model_Quote_Address $address,
         $mayReturnEmpty = false, $calculateTax = false
     ) {
-        $options = array(); $i = 0; $iMin = false; $min = false;
-        $userSelectedOption = null;
-
-        foreach ($address->getGroupedAllShippingRates() as $group) {
-            foreach ($group as $rate) {
-                $amount = (float)$rate->getPrice();
-                if ($rate->getErrorMessage()) {
-                    continue;
-                }
-                $isDefault = $address->getShippingMethod() === $rate->getCode();
-                $amountExclTax = Mage::helper('tax')->getShippingPrice($amount, false, $address);
-                $amountInclTax = Mage::helper('tax')->getShippingPrice($amount, true, $address);
-
-                $options[$i] = new Varien_Object(array(
-                    'is_default' => $isDefault,
-                    'name'       => $rate->getCode(),
-                    'code'       => trim("{$rate->getCarrierTitle()} - {$rate->getMethodTitle()}", ' -'),
-                    'amount'     => $amountExclTax,
-                ));
-                if ($calculateTax) {
-                    $options[$i]->setTaxAmount(
-                        $amountInclTax - $amountExclTax
-                        + $address->getTaxAmount() - $address->getShippingTaxAmount()
-                    );
-                }
-                if ($isDefault) {
-                    $userSelectedOption = $options[$i];
-                }
-                if (false === $min || $amountInclTax < $min) {
-                    $min = $amountInclTax;
-                    $iMin = $i;
-                }
-                $i++;
-            }
+        $options = parent::_prepareShippingOptions($address, $mayReturnEmpty, $calculateTax);
+        foreach ($options as &$option) {
+            $tmp = $option->name;
+            $option->name = $option->code;
+            $option->code = $tmp;
         }
-
-        if ($mayReturnEmpty && is_null($userSelectedOption)) {
-            $options[] = new Varien_Object(array(
-                'is_default' => true,
-                'name'       => Mage::helper('paypal')->__('N/A'),
-                'code'       => 'no_rate',
-                'amount'     => 0.00,
-            ));
-            if ($calculateTax) {
-                $options[$i]->setTaxAmount($address->getTaxAmount());
-            }
-        } elseif (is_null($userSelectedOption) && isset($options[$iMin])) {
-            $options[$iMin]->setIsDefault(true);
-        }
-
-        // Magento will transfer only first 10 cheapest shipping options if there are more than 10 available.
-        if (count($options) > 10) {
-            usort($options, array(get_class($this),'cmpShippingOptions'));
-            array_splice($options, 10);
-            // User selected option will be always included in options list
-            if (!is_null($userSelectedOption) && !in_array($userSelectedOption, $options)) {
-                $options[9] = $userSelectedOption;
-            }
-        }
-
         return $options;
     }
 
@@ -148,6 +95,7 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
                 // workaround: PayPal may concatenate code and name, and return it instead of the code:
                 || $selectedCode === "{$option['code']} {$option['name']}"
             ) {
+                // Return name here instead of code
                 return $option['name'];
             }
         }

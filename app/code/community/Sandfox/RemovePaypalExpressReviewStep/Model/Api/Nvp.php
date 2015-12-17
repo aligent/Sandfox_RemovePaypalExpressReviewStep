@@ -6,6 +6,7 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Api_Nvp extends Mage_Paypal_Mo
      * Prepare response for shipping options callback
      * Add CALLBACKVERSION if no valid options
      * This will allow paypal to prevent submission without a valid address
+     * @link https://developer.paypal.com/docs/classic/express-checkout/integration-guide/ECInstantUpdateAPI/
      *
      * @return string
      */
@@ -34,8 +35,11 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Api_Nvp extends Mage_Paypal_Mo
 
         // import/suppress shipping address, if any
         $options = $this->getShippingOptions();
+
         // Check if we are using express checkout.
         $expressCheckoutTrue = (bool)Mage::app()->getRequest()->getParam('button');
+
+        // Don't override shipping if we came from express checkout
         if ($this->getAddress() && !$expressCheckoutTrue) {
             $request = $this->_importAddresses($request);
             $request['ADDROVERRIDE'] = 1;
