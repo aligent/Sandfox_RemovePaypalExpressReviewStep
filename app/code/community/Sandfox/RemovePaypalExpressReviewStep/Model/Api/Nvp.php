@@ -50,6 +50,9 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Api_Nvp extends Mage_Paypal_Mo
             $this->_exportShippingOptions($request);
         }
 
+        // Disable the note to seller as it does not get passed back to magento
+        $request['ALLOWNOTE'] = 0;
+
         // add recurring profiles information
         $i = 0;
         foreach ($this->_recurringPaymentProfiles as $profile) {
