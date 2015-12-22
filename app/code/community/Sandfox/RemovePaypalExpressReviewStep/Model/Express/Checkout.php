@@ -67,6 +67,33 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
         $quote->collectTotals()->save();
 	}
 
+    /**
+     * Sets address data from exported address
+     *
+     * @param Mage_Sales_Model_Quote_Address $address
+     * @param array $exportedAddress
+     */
+    protected function _setExportedAddressData($address, $exportedAddress)
+    {
+        foreach ($exportedAddress->getExportedKeys() as $key) {
+            $oldData = $address->getDataUsingMethod($key);
+            $isEmpty = null;
+            if (is_array($oldData)) {
+                foreach($oldData as $val) {
+                    if(!empty($val)) {
+                        $isEmpty = false;
+                        break;
+                    }
+                    $isEmpty = true;
+                }
+            }
+            // Overwrite data for shipping address, to cater for multiple paypal express API callbacks.
+            if (empty($oldData) || $isEmpty === true || $address->getAddressType() === 'shipping') {
+                $address->setDataUsingMethod($key, $exportedAddress->getData($key));
+            }
+        }
+    }
+
     /** The problem is that Paypal doesn't display the Shipping name that's sent across to it, it's displaying the shipping code.
      *  So to get the shipping options looking pretty in Paypal you just switch around the name and code values
      */
