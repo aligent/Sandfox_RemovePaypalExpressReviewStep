@@ -67,33 +67,6 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
         $quote->collectTotals()->save();
 	}
 
-    /**
-     * Sets address data from exported address
-     *
-     * @param Mage_Sales_Model_Quote_Address $address
-     * @param array $exportedAddress
-     */
-    protected function _setExportedAddressData($address, $exportedAddress)
-    {
-        foreach ($exportedAddress->getExportedKeys() as $key) {
-            $oldData = $address->getDataUsingMethod($key);
-            $isEmpty = null;
-            if (is_array($oldData)) {
-                foreach($oldData as $val) {
-                    if(!empty($val)) {
-                        $isEmpty = false;
-                        break;
-                    }
-                    $isEmpty = true;
-                }
-            }
-            // Overwrite data for shipping address, to cater for multiple paypal express API callbacks.
-            if (empty($oldData) || $isEmpty === true || $address->getAddressType() === 'shipping') {
-                $address->setDataUsingMethod($key, $exportedAddress->getData($key));
-            }
-        }
-    }
-
     /** The problem is that Paypal doesn't display the Shipping name that's sent across to it, it's displaying the shipping code.
      *  So to get the shipping options looking pretty in Paypal you just switch around the name and code values
      */
@@ -101,70 +74,12 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
         Mage_Sales_Model_Quote_Address $address,
         $mayReturnEmpty = false, $calculateTax = false
     ) {
-        $options = array(); $i = 0; $iMin = false; $min = false;
-        $userSelectedOption = null;
-
-        foreach ($address->getGroupedAllShippingRates() as $group) {
-            foreach ($group as $rate) {
-
-                // Before calculating tax round to 2 decimal places to ensure the amounts match any quoted amounts.
-                $amount = round((float)$rate->getPrice(), 2);
-                if ($rate->getErrorMessage()) {
-                    continue;
-                }
-                $isDefault = $address->getShippingMethod() === $rate->getCode();
-                $amountExclTax = Mage::helper('tax')->getShippingPrice($amount, false, $address);
-                $amountInclTax = Mage::helper('tax')->getShippingPrice($amount, true, $address);
-
-                // Name and code reversed
-                $options[$i] = new Varien_Object(array(
-                    'is_default' => $isDefault,
-                    'code'       => trim("{$rate->getCarrier()} - {$rate->getMethodTitle()}", ' -'),
-                    'name'       => $rate->getCode(),
-                    'amount'     => $amountExclTax,
-                ));
-                if ($calculateTax) {
-                    $options[$i]->setTaxAmount(
-                        $amountInclTax - $amountExclTax
-                        + $address->getTaxAmount() - $address->getShippingTaxAmount()
-                    );
-                }
-                if ($isDefault) {
-                    $userSelectedOption = $options[$i];
-                }
-                if (false === $min || $amountInclTax < $min) {
-                    $min = $amountInclTax;
-                    $iMin = $i;
-                }
-                $i++;
-            }
+        $options = parent::_prepareShippingOptions($address, $mayReturnEmpty, $calculateTax);
+        foreach ($options as &$option) {
+            $tmp = $option->name;
+            $option->name = $option->code;
+            $option->code = $tmp;
         }
-
-        // Name and code reversed
-        if ($mayReturnEmpty && is_null($userSelectedOption)) {
-            $options[] = new Varien_Object(array(
-                'is_default' => true,
-                'code'       => Mage::helper('paypal')->__('N/A'),
-                'name'       => 'no_rate',
-                'amount'     => 0.00,
-            ));
-            if ($calculateTax) {
-                $options[$i]->setTaxAmount($address->getTaxAmount());
-            }
-        } elseif (is_null($userSelectedOption) && isset($options[$iMin])) {
-            $options[$iMin]->setIsDefault(true);
-        }
-
-        // Magento will transfer only first 10 cheapest shipping options if there are more than 10 available.
-        if (count($options) > 10) {
-            usort($options, array(get_class($this),'cmpShippingOptions'));
-            array_splice($options, 10);
-            // User selected option will be always included in options list
-            if (!is_null($userSelectedOption) && !in_array($userSelectedOption, $options)) {
-                $options[9] = $userSelectedOption;
-            }
-        }
-
         return $options;
     }
 

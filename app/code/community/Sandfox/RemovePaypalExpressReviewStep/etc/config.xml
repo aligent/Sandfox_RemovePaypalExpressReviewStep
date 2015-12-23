@@ -37,6 +37,15 @@
             </paypal>
         </models>
         <events>
+            <controller_action_predispatch_paypal_express_start>
+                <observers>
+                    <sandfox_removepaypalexpressreviewstep>
+                        <type>singleton</type>
+                        <class>sandfox_removepaypalexpressreviewstep/observer</class>
+                        <method>controllerActionPredispatchPaypalExpressStart</method>
+                    </sandfox_removepaypalexpressreviewstep>
+                </observers>
+            </controller_action_predispatch_paypal_express_start>
             <controller_action_predispatch_paypal_express_review>
                 <observers>
                     <sandfox_removepaypalexpressreviewstep>
