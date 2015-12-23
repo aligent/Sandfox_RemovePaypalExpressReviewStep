@@ -101,12 +101,70 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
         Mage_Sales_Model_Quote_Address $address,
         $mayReturnEmpty = false, $calculateTax = false
     ) {
-        $options = parent::_prepareShippingOptions($address, $mayReturnEmpty, $calculateTax);
-        foreach ($options as &$option) {
-            $tmp = $option->name;
-            $option->name = $option->code;
-            $option->code = $tmp;
+        $options = array(); $i = 0; $iMin = false; $min = false;
+        $userSelectedOption = null;
+
+        foreach ($address->getGroupedAllShippingRates() as $group) {
+            foreach ($group as $rate) {
+
+                // Before calculating tax round to 2 decimal places to ensure the amounts match any quoted amounts.
+                $amount = round((float)$rate->getPrice(), 2);
+                if ($rate->getErrorMessage()) {
+                    continue;
+                }
+                $isDefault = $address->getShippingMethod() === $rate->getCode();
+                $amountExclTax = Mage::helper('tax')->getShippingPrice($amount, false, $address);
+                $amountInclTax = Mage::helper('tax')->getShippingPrice($amount, true, $address);
+
+                // Name and code reversed
+                $options[$i] = new Varien_Object(array(
+                    'is_default' => $isDefault,
+                    'code'       => trim("{$rate->getCarrier()} - {$rate->getMethodTitle()}", ' -'),
+                    'name'       => $rate->getCode(),
+                    'amount'     => $amountExclTax,
+                ));
+                if ($calculateTax) {
+                    $options[$i]->setTaxAmount(
+                        $amountInclTax - $amountExclTax
+                        + $address->getTaxAmount() - $address->getShippingTaxAmount()
+                    );
+                }
+                if ($isDefault) {
+                    $userSelectedOption = $options[$i];
+                }
+                if (false === $min || $amountInclTax < $min) {
+                    $min = $amountInclTax;
+                    $iMin = $i;
+                }
+                $i++;
+            }
         }
+
+        // Name and code reversed
+        if ($mayReturnEmpty && is_null($userSelectedOption)) {
+            $options[] = new Varien_Object(array(
+                'is_default' => true,
+                'code'       => Mage::helper('paypal')->__('N/A'),
+                'name'       => 'no_rate',
+                'amount'     => 0.00,
+            ));
+            if ($calculateTax) {
+                $options[$i]->setTaxAmount($address->getTaxAmount());
+            }
+        } elseif (is_null($userSelectedOption) && isset($options[$iMin])) {
+            $options[$iMin]->setIsDefault(true);
+        }
+
+        // Magento will transfer only first 10 cheapest shipping options if there are more than 10 available.
+        if (count($options) > 10) {
+            usort($options, array(get_class($this),'cmpShippingOptions'));
+            array_splice($options, 10);
+            // User selected option will be always included in options list
+            if (!is_null($userSelectedOption) && !in_array($userSelectedOption, $options)) {
+                $options[9] = $userSelectedOption;
+            }
+        }
+
         return $options;
     }
 
