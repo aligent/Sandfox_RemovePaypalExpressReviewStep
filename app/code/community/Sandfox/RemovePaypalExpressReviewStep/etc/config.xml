@@ -36,6 +36,11 @@
                 </rewrite>
             </paypal>
         </models>
+        <helpers>
+            <sandfox_removepaypalexpressreviewstep>
+                <class>Sandfox_RemovePaypalExpressReviewStep_Helper</class>
+            </sandfox_removepaypalexpressreviewstep>
+        </helpers>
         <events>
             <controller_action_predispatch_paypal_express_start>
                 <observers>

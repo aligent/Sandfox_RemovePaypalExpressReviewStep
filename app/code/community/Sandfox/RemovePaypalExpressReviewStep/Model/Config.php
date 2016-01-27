@@ -9,10 +9,13 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Config extends Mage_Paypal_Mod
 	 */
 	public function getExpressCheckoutStartUrl($token)
 	{
-		return $this->getPaypalUrl(array(
-			'cmd'           => '_express-checkout',
-			'useraction'    => 'commit',
-			'token'         => $token
-		));
+		$urlParams = array(
+			'cmd' => '_express-checkout',
+			'token' => $token
+		);
+		if(Mage::helper("sandfox_removepaypalexpressreviewstep/data")->skipReview()){
+			$urlParams['useraction'] = 'commit';
+		}
+		return $this->getPaypalUrl($urlParams);
 	}
 }

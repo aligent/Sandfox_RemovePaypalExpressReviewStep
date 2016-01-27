@@ -26,15 +26,48 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
         $quote->setCustomerLastname($billingAddress->getLastname());
         $quote->setCustomerSuffix($billingAddress->getSuffix());
         $quote->setCustomerNote($exportedBillingAddress->getData('note'));
+
         $this->_setExportedAddressData($billingAddress, $exportedBillingAddress);
 
         // import shipping address
         $exportedShippingAddress = $this->_api->getExportedShippingAddress();
+
+        //Paypal returns the full ship-to name and puts it in the first name field.
+        //here, we attempt to split it back into it's correct format. If this can't be done,
+        //the Magento shipment last name will be the last name on the Paypal account.
+        $shipFullName = $exportedShippingAddress->getFirstname();
+        $nameParts = explode(" ", $shipFullName);
+        if(count($nameParts) > 1){
+            $exportedShippingAddress["firstname"] = $nameParts[0];
+            $exportedShippingAddress["lastname"] = end($nameParts);
+        }
+
         if (!$quote->getIsVirtual()) {
             $shippingAddress = $quote->getShippingAddress();
             if ($shippingAddress) {
                 if ($exportedShippingAddress) {
                     $this->_setExportedAddressData($shippingAddress, $exportedShippingAddress);
+                    //Overwrite the Paypal shipping address name with the customer name if configured.
+                    if(Mage::helper("sandfox_removepaypalexpressreviewstep/data")->forceCustomerName() &&
+                       $quote->getCustomer()->getEntityId()){
+                        $shippingAddress->setFirstname($quote->getCustomer()->getFirstname());
+                        $shippingAddress->setLastname($quote->getCustomer()->getLastname());
+                        $shippingAddress->setMiddlename($quote->getCustomer()->getMiddlename());
+                    }
+                    //Copy Paypal shipping address info into billing address if required and configured
+                    //If a billing address exists, then no overwriting takes place.
+                    if(Mage::helper("sandfox_removepaypalexpressreviewstep/data")->useShippingAsBilling() &&
+                        !$billingAddress->getData("street")){
+                        $billingAddress->setFirstname($shippingAddress->getFirstname());
+                        $billingAddress->setLastname($shippingAddress->getLastname());
+                        $billingAddress->setStreet($shippingAddress->getStreet());
+                        $billingAddress->setPostcode($shippingAddress->getPostcode());
+                        $billingAddress->setRegion($shippingAddress->getRegion());
+                        $billingAddress->setRegionId($shippingAddress->getRegionId());
+                        $billingAddress->setCountryId($shippingAddress->getCountryId());
+                        $billingAddress->setCity($shippingAddress->getCity());
+
+                    }
                     $shippingAddress->setCollectShippingRates(true);
                     $shippingAddress->setSameAsBilling(0);
                 }
