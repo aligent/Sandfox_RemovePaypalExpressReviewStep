@@ -14,7 +14,7 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Observer
 
 		// Only redirect if a shipping method has been set otherwise continue to review
 		// Otherwise magento will redirect back to review causing an endless loop
-		if ($shippingAddress->getShippingMethod()) {
+		if ($shippingAddress->getShippingMethod() || $quote->getIsVirtual()) {
 			Mage::app()->getResponse()->setRedirect(Mage::getUrl('*/*/placeOrder'));
 		}
 	}

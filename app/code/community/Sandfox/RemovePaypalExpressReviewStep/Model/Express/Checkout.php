@@ -32,17 +32,18 @@ class Sandfox_RemovePaypalExpressReviewStep_Model_Express_Checkout extends Mage_
         // import shipping address
         $exportedShippingAddress = $this->_api->getExportedShippingAddress();
 
-        //Paypal returns the full ship-to name and puts it in the first name field.
-        //here, we attempt to split it back into it's correct format. If this can't be done,
-        //the Magento shipment last name will be the last name on the Paypal account.
-        $shipFullName = $exportedShippingAddress->getFirstname();
-        $nameParts = explode(" ", $shipFullName);
-        if(count($nameParts) > 1){
-            $exportedShippingAddress["firstname"] = $nameParts[0];
-            $exportedShippingAddress["lastname"] = end($nameParts);
-        }
-
         if (!$quote->getIsVirtual()) {
+
+            //Paypal returns the full ship-to name and puts it in the first name field.
+            //here, we attempt to split it back into it's correct format. If this can't be done,
+            //the Magento shipment last name will be the last name on the Paypal account.
+            $shipFullName = $exportedShippingAddress->getFirstname();
+            $nameParts = explode(" ", $shipFullName);
+            if(count($nameParts) > 1){
+                $exportedShippingAddress["firstname"] = $nameParts[0];
+                $exportedShippingAddress["lastname"] = end($nameParts);
+            }
+
             $shippingAddress = $quote->getShippingAddress();
             if ($shippingAddress) {
                 if ($exportedShippingAddress) {
