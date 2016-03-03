@@ -1,6 +1,6 @@
 <?php
 /**
- * Image chooser data helper.
+ * Paypal Express review skip helper.
  *
  * @package     Sandfox_RemovePaypalExpressReviewStep
  * @author      Matthew O'Loughlin (matthew.oloughlin@aligent.com.au)
